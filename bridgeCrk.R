@@ -8,14 +8,15 @@ dataD = read.csv("../data/MVPRestore_BOR_D_monthly.csv")
 dataN = read.csv("../data/MVPRestore_BOR_N_monthly.csv")
 dataR = read.csv("../data/MVPRestore_BOR_R_monthly.csv")
 
-drought = read.csv("../data/bridgeCrkDrought.csv")
-## remove 2024
-drought = drought[1:240,]
+droughtD = read.csv("../data/BOR_D_SPEIH.csv")
+droughtN = read.csv("../data/BOR_N_SPEIH.csv")
+droughtR = read.csv("../data/BOR_R_SPEIH.csv")
+
 ## add date column
 dataD$date = as.Date(as.yearmon(paste(dataD$Year, dataD$Month), "%Y %m"))
 dataN$date = as.Date(as.yearmon(paste(dataN$Year, dataN$Month), "%Y %m"))
 dataR$date = as.Date(as.yearmon(paste(dataR$Year, dataR$Month), "%Y %m"))
-drought$date = format(as.Date(drought$system.time_start, "%B %d, %Y"))
+#drought$date = format(as.Date(drought$system.time_start, "%B %d, %Y"))
 
 ## A LOT of missing data - sometimes up to 6 consecutive months! ex 2012-2013
 print(paste0("Missing D: ", sum(is.na(dataD$Mesic_median))))
@@ -36,10 +37,21 @@ dataR  = dataR %>%
   filter(month(date) %in% seq(6,9)) %>%
   filter(year(date) !=2012)
 
+## drought 
+droughtD  = droughtD %>%
+  filter(month(Date) %in% seq(6,9)) %>%
+  filter(year(Date) !=2012) %>%
+  filter(year(Date) !=2024)
 
-drought  = drought %>%
-  filter(month(date) %in% seq(6,9)) %>%
-  filter(year(date) !=2012)
+droughtN  = droughtN %>%
+  filter(month(Date) %in% seq(6,9)) %>%
+  filter(year(Date) !=2012)%>%
+  filter(year(Date) !=2024)
+
+droughtR  = droughtR %>%
+  filter(month(Date) %in% seq(6,9)) %>%
+  filter(year(Date) !=2012)%>%
+  filter(year(Date) !=2024)
 
 ## Also some missing data in the pre-period which this package can't handle
 ## Insert 0 for NA for the time being - many of these are may/oct
@@ -69,9 +81,9 @@ dataD_filled= replace_na_with_mean(dataD)
 dataN_filled = replace_na_with_mean(dataN)
 dataR_filled = replace_na_with_mean(dataR)
 
-dataD_bsts =  cbind(dataD_filled$Mesic_median, drought$spei1y) ## similar results with pdsi
-dataN_bsts =  cbind(dataN_filled$Mesic_median, drought$spei1y) ## where is the 'natural site relative to restoration?
-dataR_bsts =  cbind(dataR_filled$Mesic_median, drought$spei1y) ## where is the 'natural site relative to restoration?
+dataD_bsts =  cbind(dataD_filled$Mesic_median, droughtD$speih)
+dataN_bsts =  cbind(dataN_filled$Mesic_median, droughtN$speih)
+dataR_bsts =  cbind(dataR_filled$Mesic_median, droughtR$speih)
 
 ### define pre and post restoration period
 
