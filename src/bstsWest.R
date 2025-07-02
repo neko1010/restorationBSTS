@@ -70,4 +70,4 @@ sites = c("BOR", "WOR", "LOR", "BID", "YID", "TCID", "SFSPCO", "FMCO")
 dates = c(2009, 2016, 2012, 2018, 2015, 2017, 2018, 2015)
 
 indices = seq(1, length(sites))
-apply(indices, 1, process_site)
+lapply(indices, process_site)
