@@ -10,8 +10,8 @@ replace_na_with_mean <- function(df) {
     na_indices <- which(is.na(df[, i]))
     for (j in na_indices) {
       if (j < 5) {
-        df[j, i] <- mean(c(df[j + 4, i], df[j + 8, i]), na.rm = T) ## still an issue here - following 2 are missing...
-      } else if (j > 5 & j < 9){  
+        df[j, i] <- mean(c(df[j + 4, i], df[j + 8, i]), na.rm = T) 
+      } else if (j >= 5 & j < 9){  
         df[j, i] <- mean(c(df[j - 4, i], df[j + 4, i],df[j + 8, i]), na.rm = T)
       } else if (j > nrow(df) - 5 & j > nrow(df) - 8) {
         df[j, i] <- mean(c(df[j - 4, i], df[j + 4, i],df[j + 8, i]), na.rm = T)
@@ -30,7 +30,8 @@ process_site = function(i){
   site = sites[i]
   date = dates[i]
   
-  data = read.csv(paste0("../data/MVPRestore_", site, "_R_monthly.csv"))
+  #data = read.csv(paste0("../data/MVPRestore_", site, "_R_monthly.csv"))
+  data = read.csv(paste0("../data/", site, "_R_med.csv"))
   drought = read.csv(paste0("../data/", site, "_R_SPEIH.csv"))
   
   ## add date column
@@ -42,8 +43,8 @@ process_site = function(i){
   
   ## drought 
   drought  = drought %>%
-    filter(month(Date) %in% seq(6,9)) %>%
-    filter(year(Date) !=2024)
+    filter(month(Date) %in% seq(6,9)) #%>%
+    #filter(year(Date) !=2024)
   
   dataFill= replace_na_with_mean(data)
   dataBSTS =  cbind(dataFill$Mesic_median, drought$speih)
@@ -52,7 +53,7 @@ process_site = function(i){
   index = which(data$Year == date)[4]
   
   pre_period = c(1,index)
-  post_period = c(index + 1, 156)
+  post_period = c(index + 1, length(dataFill[,1]))
   
   impact = CausalImpact(dataBSTS, pre_period , post_period , model.args = list(nseasons = 4))
   

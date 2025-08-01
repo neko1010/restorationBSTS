@@ -4,12 +4,15 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 
-dataD = read.csv("../data/MVPRestore_BOR_D_monthly.csv")
-dataN = read.csv("../data/MVPRestore_BOR_N_monthly.csv")
-dataR = read.csv("../data/MVPRestore_BOR_R_monthly.csv")
+#dataD = read.csv("../data/old/MVPRestore_BOR_D_monthly.csv")
+#dataN = read.csv("../data/old/MVPRestore_BOR_N_monthly.csv")
+#dataR = read.csv("../data/MVPRestore_BOR_R_monthly.csv")
+dataD = read.csv("../data/BOR_D_med.csv")
+dataN = read.csv("../data/BOR_N_med.csv")
+dataR = read.csv("../data/BOR_R_med.csv")
 
-droughtD = read.csv("../data/BOR_D_SPEIH.csv")
-droughtN = read.csv("../data/BOR_N_SPEIH.csv")
+droughtD = read.csv("../data/old/BOR_D_SPEIH.csv")
+droughtN = read.csv("../data/old/BOR_N_SPEIH.csv")
 droughtR = read.csv("../data/BOR_R_SPEIH.csv")
 
 ## add date column
@@ -20,38 +23,38 @@ dataR$date = as.Date(as.yearmon(paste(dataR$Year, dataR$Month), "%Y %m"))
 
 ## A LOT of missing data - sometimes up to 6 consecutive months! ex 2012-2013
 print(paste0("Missing D: ", sum(is.na(dataD$Mesic_median))))
-print(paste0("Missing N: ", sum(is.na(dataD$Mesic_median))))
+print(paste0("Missing N: ", sum(is.na(dataN$Mesic_median))))
 
 ## Try removing May, October, and all of 2012
 dataD  = dataD %>%
-  filter(month(date) %in% seq(6,9)) %>%
-  filter(year(date) !=2012)
+  filter(month(date) %in% seq(6,9)) #%>%
+  #filter(year(date) !=2012)
 
 print(paste0("Missing D: ", sum(is.na(dataD $Mesic_median)))) ##17 missing
 
 dataN  = dataN %>%
-  filter(month(date) %in% seq(6,9)) %>%
-  filter(year(date) !=2012)
+  filter(month(date) %in% seq(6,9)) #%>%
+  #filter(year(date) !=2012)
 
 dataR  = dataR %>%
-  filter(month(date) %in% seq(6,9)) %>%
-  filter(year(date) !=2012)
+  filter(month(date) %in% seq(6,9)) #%>%
+  #filter(year(date) !=2012)
 
 ## drought 
 droughtD  = droughtD %>%
-  filter(month(Date) %in% seq(6,9)) %>%
-  filter(year(Date) !=2012) %>%
-  filter(year(Date) !=2024)
+  filter(month(Date) %in% seq(6,9)) #%>%
+  #filter(year(Date) !=2012) %>%
+  #filter(year(Date) !=2024)
 
 droughtN  = droughtN %>%
-  filter(month(Date) %in% seq(6,9)) %>%
-  filter(year(Date) !=2012)%>%
-  filter(year(Date) !=2024)
+  filter(month(Date) %in% seq(6,9)) #%>%
+  #filter(year(Date) !=2012)%>%
+  #filter(year(Date) !=2024)
 
 droughtR  = droughtR %>%
-  filter(month(Date) %in% seq(6,9)) %>%
-  filter(year(Date) !=2012)%>%
-  filter(year(Date) !=2024)
+  filter(month(Date) %in% seq(6,9)) #%>%
+  #filter(year(Date) !=2012)%>%
+  #filter(year(Date) !=2024)
 
 ## Also some missing data in the pre-period which this package can't handle
 ## Insert 0 for NA for the time being - many of these are may/oct
@@ -62,8 +65,8 @@ replace_na_with_mean <- function(df) {
     na_indices <- which(is.na(df[, i]))
     for (j in na_indices) {
       if (j < 5) {
-        df[j, i] <- mean(c(df[j + 4, i], df[j + 8, i]), na.rm = T) ## still an issue here - following 2 are missing...
-      } else if (j > 5 & j < 9){  
+        df[j, i] <- mean(c(df[j + 4, i], df[j + 8, i]), na.rm = T) 
+      } else if (j >= 5 & j < 9){  
         df[j, i] <- mean(c(df[j - 4, i], df[j + 4, i],df[j + 8, i]), na.rm = T)
       } else if (j > nrow(df) - 5 & j > nrow(df) - 8) {
         df[j, i] <- mean(c(df[j - 4, i], df[j + 4, i],df[j + 8, i]), na.rm = T)
@@ -88,7 +91,7 @@ dataR_bsts =  cbind(dataR_filled$Mesic_median, droughtR$speih)
 ### define pre and post restoration period
 
 pre_period = c(1,104)
-post_period = c(105, 156)
+post_period = c(105, 164)
 
 impactD = CausalImpact(dataD_bsts, pre_period , post_period , model.args = list(nseasons = 4))
 impactN = CausalImpact(dataN_bsts, pre_period , post_period , model.args = list(nseasons = 4))
@@ -98,9 +101,26 @@ summary(impactD)
 summary(impactN)
 summary(impactR)
 
-plotD = plot(impactD, c("original", "pointwise")) + ggtitle("Degraded")
+plotD = plot(impactD, c("original", "pointwise")) + ggtitle("BOR degraded")
 plotD
-plotN = plot(impactN, c("original", "pointwise")) + ggtitle("Natural")
+ggsave(paste0("../output/BOR_D_plot.png"), width = 6, height = 4)
+
+plotN = plot(impactN, c("original", "pointwise")) + ggtitle("BOR natural")
 plotN
-plotR = plot(impactR, c("original", "pointwise")) + ggtitle("Restored")
+ggsave(paste0("../output/BOR_N_plot.png"), width = 6, height = 4)
+
+plotR = plot(impactR, c("original", "pointwise")) + ggtitle("BOR restored")
 plotR
+#ggsave(paste0("../output/BOR_R_plot.png"), width = 6, height = 4)
+
+sink("../output/BOR_D_summary.txt")
+print(summary(impactD))
+sink()
+
+sink("../output/BOR_N_summary.txt")
+print(summary(impactN))
+sink()
+
+#sink("../output/BOR_R_summary.txt")
+#print(summary(impactR))
+#sink()
