@@ -13,7 +13,7 @@ replace_na_with_mean <- function(df) {
         df[j, i] <- mean(c(df[j + 4, i], df[j + 8, i]), na.rm = T) 
       } else if (j >= 5 & j < 9){  
         df[j, i] <- mean(c(df[j - 4, i], df[j + 4, i],df[j + 8, i]), na.rm = T)
-      } else if (j > nrow(df) - 5 & j > nrow(df) - 8) {
+      } else if (j < nrow(df) - 5 & j > nrow(df) - 8) {
         df[j, i] <- mean(c(df[j - 4, i], df[j + 4, i],df[j + 8, i]), na.rm = T)
       } else if (j > nrow(df) - 5) {
         df[j, i] <- mean(c(df[j - 4, i], df[j - 8, i]))
