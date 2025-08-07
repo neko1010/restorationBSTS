@@ -3,6 +3,7 @@ library(zoo)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(ggpubr)
 
 ## function to use values from same month in previous and following two years
 replace_na_with_mean <- function(df) {
@@ -26,9 +27,12 @@ replace_na_with_mean <- function(df) {
 }
 
 
-process_site = function(i){
+process_site = function(i, plotType = NULL){
+  
+  set.seed(1)
   site = sites[i]
   date = dates[i]
+  lab = labs[i]
   
   #data = read.csv(paste0("../data/MVPRestore_", site, "_R_monthly.csv"))
   data = read.csv(paste0("../data/", site, "_R_med.csv"))
@@ -47,28 +51,63 @@ process_site = function(i){
     #filter(year(Date) !=2024)
   
   dataFill= replace_na_with_mean(data)
-  dataBSTS =  cbind(dataFill$Mesic_median, drought$speih)
+  dataBSTS =  zoo(cbind(dataFill$Mesic_median, drought$speih), as.Date(dataFill$date,format = "%Y %m")) 
   
   ### define pre and post restoration period
-  index = which(data$Year == date)[4]
+  restIndex = which(data$Year == date)[4]
   
-  pre_period = c(1,index)
-  post_period = c(index + 1, length(dataFill[,1]))
+  #pre_period = c(1,index)
+  #post_period = c(index + 1, length(dataFill[,1]))
   
-  impact = CausalImpact(dataBSTS, pre_period , post_period , model.args = list(nseasons = 4))
+  pre_period_date = as.Date(c(index(dataBSTS[1]), index(dataBSTS[restIndex])),format = "%Y-%m-%d")
+  post_period_date = as.Date(c(index(dataBSTS[restIndex + 1]), index(dataBSTS[length(dataFill[,1])])), format = "%Y-%m-%d") 
+  
+  impact = CausalImpact(dataBSTS, pre_period_date , post_period_date , model.args = list(nseasons = 4))
   
   ## write the summary to a text file
   sink(paste0("../output/", site, "_summary.txt"))
   print(summary(impact))
   sink()
   
-  plot = plot(impact, c("original", "pointwise")) + ggtitle(paste0(site, " restoration impact"))
-  ggsave(paste0("../output/", site, "_plot.png"), width = 6, height = 4)
+  #og = plot(impact, c("original", "pointwise")) +
+  og = plot(impact, c("original")) +
+    annotate("text", x = dataFill$date[1], y = 125, label = lab) +
+    #scale_y_continuous(limits = ~c(-130, 130)) +
+    ylim(-60, 140) + ## CIs omitted when beyond these limits
+    ylab("Mesic Vegetation Area\n (% of valley bottom)") +
+    xlab("Date") +
+    theme(axis.title = element_text(size = 10))
   
+  
+  pointwise = plot(impact, c("pointwise")) +
+    #ggtitle(paste0(lab, " ", site, " restoration impact")) +
+    annotate("text", x = dataFill$date[1], y = 105, label = lab) +
+    ylim(-130, 130) +
+    ylab("Mesic Vegetation Area\n (% of valley bottom)") +
+    xlab("Date")+
+    theme(axis.title = element_text(size = 10))
+  
+  if(plotType == "pointwise"){
+    outplot = pointwise
+  }
+  else{
+    outplot = og
+  }
+  
+  #ggsave(paste0("../output/", site, "_plot.png"), width = 6, height = 4)
+  return(outplot)
 }
 
 sites = c("BOR", "WOR", "LOR", "BID", "YID", "TCID", "SFSPCO", "FMCO")
 dates = c(2009, 2016, 2012, 2018, 2015, 2017, 2018, 2015)
+labs = c("A", "B", "C", "D", "E", "F", "G", "H")
 
 indices = seq(1, length(sites))
-lapply(indices, process_site)
+ogPlots = lapply(indices, process_site, "og")
+ptPlots = lapply(indices, process_site, "pointwise")
+
+ggarrange(plotlist = ogPlots, ncol =2, nrow = 4)
+
+ggarrange(plotlist = ptPlots, ncol =2, nrow = 4)
+
+## assemble single plot

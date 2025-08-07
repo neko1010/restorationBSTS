@@ -3,61 +3,7 @@ library(zoo)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
-
-#dataD = read.csv("../data/old/MVPRestore_BOR_D_monthly.csv")
-#dataN = read.csv("../data/old/MVPRestore_BOR_N_monthly.csv")
-#dataR = read.csv("../data/MVPRestore_BOR_R_monthly.csv")
-dataD = read.csv("../data/BOR_D_med.csv")
-dataN = read.csv("../data/BOR_N_med.csv")
-dataR = read.csv("../data/BOR_R_med.csv")
-
-droughtD = read.csv("../data/old/BOR_D_SPEIH.csv")
-droughtN = read.csv("../data/old/BOR_N_SPEIH.csv")
-droughtR = read.csv("../data/BOR_R_SPEIH.csv")
-
-## add date column
-dataD$date = as.Date(as.yearmon(paste(dataD$Year, dataD$Month), "%Y %m"))
-dataN$date = as.Date(as.yearmon(paste(dataN$Year, dataN$Month), "%Y %m"))
-dataR$date = as.Date(as.yearmon(paste(dataR$Year, dataR$Month), "%Y %m"))
-#drought$date = format(as.Date(drought$system.time_start, "%B %d, %Y"))
-
-## A LOT of missing data - sometimes up to 6 consecutive months! ex 2012-2013
-print(paste0("Missing D: ", sum(is.na(dataD$Mesic_median))))
-print(paste0("Missing N: ", sum(is.na(dataN$Mesic_median))))
-
-## Try removing May, October, and all of 2012
-dataD  = dataD %>%
-  filter(month(date) %in% seq(6,9)) #%>%
-  #filter(year(date) !=2012)
-
-print(paste0("Missing D: ", sum(is.na(dataD $Mesic_median)))) ##17 missing
-
-dataN  = dataN %>%
-  filter(month(date) %in% seq(6,9)) #%>%
-  #filter(year(date) !=2012)
-
-dataR  = dataR %>%
-  filter(month(date) %in% seq(6,9)) #%>%
-  #filter(year(date) !=2012)
-
-## drought 
-droughtD  = droughtD %>%
-  filter(month(Date) %in% seq(6,9)) #%>%
-  #filter(year(Date) !=2012) %>%
-  #filter(year(Date) !=2024)
-
-droughtN  = droughtN %>%
-  filter(month(Date) %in% seq(6,9)) #%>%
-  #filter(year(Date) !=2012)%>%
-  #filter(year(Date) !=2024)
-
-droughtR  = droughtR %>%
-  filter(month(Date) %in% seq(6,9)) #%>%
-  #filter(year(Date) !=2012)%>%
-  #filter(year(Date) !=2024)
-
-## Also some missing data in the pre-period which this package can't handle
-## Insert 0 for NA for the time being - many of these are may/oct
+library(ggpubr)
 
 ## function to use values from same month in previous and following two years
 replace_na_with_mean <- function(df) {
@@ -80,47 +26,87 @@ replace_na_with_mean <- function(df) {
   return(df)
 }
 
-dataD_filled= replace_na_with_mean(dataD)
-dataN_filled = replace_na_with_mean(dataN)
-dataR_filled = replace_na_with_mean(dataR)
 
-dataD_bsts =  cbind(dataD_filled$Mesic_median, droughtD$speih)
-dataN_bsts =  cbind(dataN_filled$Mesic_median, droughtN$speih)
-dataR_bsts =  cbind(dataR_filled$Mesic_median, droughtR$speih)
+process_site = function(i, plotType = NULL){
+  
+  set.seed(1)
+  site = sites[i]
+  date = dates[i]
+  lab = labs[i]
+  
+  #data = read.csv(paste0("../data/MVPRestore_", site, "_R_monthly.csv"))
+  data = read.csv(paste0("../data/", site, "_med.csv"))
+  drought = read.csv(paste0("../data/", site, "_SPEIH.csv"))
+  
+  ## add date column
+  data$date = as.Date(as.yearmon(paste(data$Year, data$Month), "%Y %m"))
+  
+  ## Removing May, October
+  data  = data %>%
+    filter(month(date) %in% seq(6,9))
+  
+  ## drought 
+  drought  = drought %>%
+    filter(month(Date) %in% seq(6,9)) #%>%
+    #filter(year(Date) !=2024)
+  
+  dataFill= replace_na_with_mean(data)
+  dataBSTS =  zoo(cbind(dataFill$Mesic_median, drought$speih), as.Date(dataFill$date,format = "%Y %m")) 
+  
+  ### define pre and post restoration period
+  restIndex = which(data$Year == date)[4]
+  
+  #pre_period = c(1,index)
+  #post_period = c(index + 1, length(dataFill[,1]))
+  
+  pre_period_date = as.Date(c(index(dataBSTS[1]), index(dataBSTS[restIndex])),format = "%Y-%m-%d")
+  post_period_date = as.Date(c(index(dataBSTS[restIndex + 1]), index(dataBSTS[length(dataFill[,1])])), format = "%Y-%m-%d") 
+  
+  impact = CausalImpact(dataBSTS, pre_period_date , post_period_date , model.args = list(nseasons = 4))
+  
+  ## write the summary to a text file
+  sink(paste0("../output/", site, "_summary.txt"))
+  print(summary(impact))
+  sink()
+  
+  #og = plot(impact, c("original", "pointwise")) +
+  og = plot(impact, c("original")) +
+    annotate("text", x = dataFill$date[1], y = 125, label = lab) +
+    #scale_y_continuous(limits = ~c(-130, 130)) +
+    ylim(-60, 140) + ## CIs omitted when beyond these limits
+    ylab("Mesic Vegetation Area\n (% of valley bottom)") +
+    xlab("Date") +
+    theme(axis.title = element_text(size = 10))
+  
+  
+  pointwise = plot(impact, c("pointwise")) +
+    #ggtitle(paste0(lab, " ", site, " restoration impact")) +
+    annotate("text", x = dataFill$date[1], y = 105, label = lab) +
+    ylim(-130, 130) +
+    ylab("Mesic Vegetation Area\n (% of valley bottom)") +
+    xlab("Date")+
+    theme(axis.title = element_text(size = 10))
+  
+  if(plotType == "pointwise"){
+    outplot = pointwise
+  }
+  else{
+    outplot = og
+  }
+  
+  #ggsave(paste0("../output/", site, "_plot.png"), width = 6, height = 4)
+  return(outplot)
+}
 
-### define pre and post restoration period
+sites = c("BOR_D", "BOR_N", "BOR_R")
+dates = c(2009, 2009, 2009)
+labs = c("A", "B", "C")
 
-pre_period = c(1,104)
-post_period = c(105, 164)
+indices = seq(1, length(sites))
+ogPlots = lapply(indices, process_site, "og")
+ptPlots = lapply(indices, process_site, "pointwise")
 
-impactD = CausalImpact(dataD_bsts, pre_period , post_period , model.args = list(nseasons = 4))
-impactN = CausalImpact(dataN_bsts, pre_period , post_period , model.args = list(nseasons = 4))
-impactR = CausalImpact(dataR_bsts, pre_period , post_period , model.args = list(nseasons = 4))
+ggarrange(plotlist = ogPlots, ncol =1, nrow = 3)
 
-summary(impactD) 
-summary(impactN)
-summary(impactR)
+ggarrange(plotlist = ptPlots, ncol =1, nrow = 3)
 
-plotD = plot(impactD, c("original", "pointwise")) + ggtitle("BOR degraded")
-plotD
-ggsave(paste0("../output/BOR_D_plot.png"), width = 6, height = 4)
-
-plotN = plot(impactN, c("original", "pointwise")) + ggtitle("BOR natural")
-plotN
-ggsave(paste0("../output/BOR_N_plot.png"), width = 6, height = 4)
-
-plotR = plot(impactR, c("original", "pointwise")) + ggtitle("BOR restored")
-plotR
-#ggsave(paste0("../output/BOR_R_plot.png"), width = 6, height = 4)
-
-sink("../output/BOR_D_summary.txt")
-print(summary(impactD))
-sink()
-
-sink("../output/BOR_N_summary.txt")
-print(summary(impactN))
-sink()
-
-#sink("../output/BOR_R_summary.txt")
-#print(summary(impactR))
-#sink()
