@@ -1,18 +1,18 @@
 Posterior inference {CausalImpact}
 
-                         Average       Cumulative  
-Actual                   38            1998        
-Prediction (s.d.)        17 (2.6)      900 (135.0) 
-95% CI                   [12, 22]      [628, 1155] 
-                                                   
-Absolute effect (s.d.)   21 (2.6)      1098 (135.0)
-95% CI                   [16, 26]      [843, 1370] 
-                                                   
-Relative effect (s.d.)   127% (38%)    127% (38%)  
-95% CI                   [73%, 218%]   [73%, 218%] 
+                         Average       Cumulative   
+Actual                   34            2070         
+Prediction (s.d.)        14 (2.7)      864 (164.9)  
+95% CI                   [9.2, 20]     [549.7, 1171]
+                                                    
+Absolute effect (s.d.)   20 (2.7)      1205 (164.9) 
+95% CI                   [15, 25]      [898, 1520]  
+                                                    
+Relative effect (s.d.)   149% (54%)    149% (54%)   
+95% CI                   [77%, 277%]   [77%, 277%]  
 
-Posterior tail-area probability p:   0.001
-Posterior prob. of a causal effect:  99.9%
+Posterior tail-area probability p:   0.00103
+Posterior prob. of a causal effect:  99.89723%
 
 For more details, type: summary(impact, "report")
 
