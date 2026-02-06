@@ -103,11 +103,23 @@ dates = c(2009, 2016, 2012, 2018, 2015, 2017, 2018, 2015)
 labs = c("A", "B", "C", "D", "E", "F", "G", "H")
 
 indices = seq(1, length(sites))
-ogPlots = lapply(indices, process_site, "og")
-ptPlots = lapply(indices, process_site, "pointwise")
+indicesA = seq(1, length(sites)/2)
+indicesB = seq(length(sites)/2+1, length(sites))
 
-ggarrange(plotlist = ogPlots, ncol =2, nrow = 4)
+#ogPlots = lapply(indices, process_site, "og")
+ogPlotsA = lapply(indicesA, process_site, "og")
+ogPlotsB = lapply(indicesB, process_site, "og")
 
-ggarrange(plotlist = ptPlots, ncol =2, nrow = 4)
+#ptPlots = lapply(indices, process_site, "pointwise")
+ptPlotsA = lapply(indicesA, process_site, "pointwise")
+ptPlotsB = lapply(indicesB, process_site, "pointwise")
+
+#ggarrange(plotlist = ogPlots, ncol =2, nrow = 4)
+ggarrange(plotlist = ogPlotsA, ncol =1, nrow = 4)
+ggarrange(plotlist = ogPlotsB, ncol =1, nrow = 4)
+
+#ggarrange(plotlist = ptPlots, ncol =2, nrow = 4)
+ggarrange(plotlist = ptPlotsA, ncol =1, nrow = 4)
+ggarrange(plotlist = ptPlotsB, ncol =1, nrow = 4)
 
 ## assemble single plot
