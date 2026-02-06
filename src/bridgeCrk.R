@@ -71,9 +71,9 @@ process_site = function(i, plotType = NULL){
   
   #og = plot(impact, c("original", "pointwise")) +
   og = plot(impact, c("original")) +
-    annotate("text", x = dataFill$date[1], y = 125, label = lab) +
+    annotate("text", x = dataFill$date[1], y = 80, label = lab) +
     #scale_y_continuous(limits = ~c(-130, 130)) +
-    ylim(-60, 140) + ## CIs omitted when beyond these limits
+    ylim(-50, 90) + ## CIs omitted when beyond these limits
     ylab("Mesic Vegetation Area\n (% of valley bottom)") +
     xlab("Date") +
     theme(axis.title = element_text(size = 10))
@@ -81,8 +81,8 @@ process_site = function(i, plotType = NULL){
   
   pointwise = plot(impact, c("pointwise")) +
     #ggtitle(paste0(lab, " ", site, " restoration impact")) +
-    annotate("text", x = dataFill$date[1], y = 105, label = lab) +
-    ylim(-130, 130) +
+    annotate("text", x = dataFill$date[1], y = 90, label = lab) +
+    ylim(-70, 100) +
     ylab("Mesic Vegetation Area\n (% of valley bottom)") +
     xlab("Date")+
     theme(axis.title = element_text(size = 10))
