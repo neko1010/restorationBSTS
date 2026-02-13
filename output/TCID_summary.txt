@@ -12,7 +12,7 @@ Relative effect (s.d.)   -23% (7.9%)   -23% (7.9%)
 95% CI                   [-35%, -4%]   [-35%, -4%]  
 
 Posterior tail-area probability p:   0.01373
-Posterior prob. of a causal effect:  98.627%
+Posterior probability of an effect:  98.627%
 
 For more details, type: summary(impact, "report")
 
